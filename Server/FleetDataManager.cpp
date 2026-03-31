@@ -148,12 +148,19 @@ void FleetDataManager::printFleetSummary() {
 
         std::ostringstream msg;
         msg << "Aircraft: " << rec->airplaneId
-            << " | Current Avg Burn: " << std::fixed << std::setprecision(6)
-            << rec->currentFlightAvg << " gal/s"
-            << " | Completed Flights: " << rec->completedFlightAverages.size()
-            << " | Historical Avg: " << std::fixed << std::setprecision(6)
-            << historicalAvg << " gal/s"
             << " | Flight Active: " << (rec->isFlightActive ? "Yes" : "No");
+        if (rec->isFlightActive && rec->currentFlightSampleCount > 0) {
+            msg << " | Current Avg Burn: " << std::fixed << std::setprecision(6)
+                << rec->currentFlightAvg << " gal/s"
+                << " | Samples: " << rec->currentFlightSampleCount;
+        } else if (!rec->isFlightActive) {
+            msg << " | Current Flight: N/A";
+        }
+        msg << " | Completed Flights: " << rec->completedFlightAverages.size();
+        if (!rec->completedFlightAverages.empty()) {
+            msg << " | Historical Avg: " << std::fixed << std::setprecision(6)
+                << historicalAvg << " gal/s";
+        }
         Logger::log(msg.str());
     }
     Logger::log("--- End Fleet Summary ---");

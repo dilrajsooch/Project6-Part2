@@ -10,22 +10,32 @@
 
 std::time_t FleetDataManager::parseIso8601(const std::string& timestamp) {
     // Format: "YYYY-MM-DDTHH:MM:SS"
+    // Uses Julian Day Number for timezone-independent elapsed time calculation.
+    // mktime() is intentionally avoided — it applies local timezone and DST
+    // adjustments which can produce incorrect elapsed seconds on DST transition
+    // days (e.g. March 12, 2023 in North America).
     int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
     if (std::sscanf(timestamp.c_str(), "%d-%d-%dT%d:%d:%d",
                     &year, &month, &day, &hour, &minute, &second) != 6) {
         return static_cast<std::time_t>(-1);
     }
 
-    std::tm t{};
-    t.tm_year  = year - 1900;
-    t.tm_mon   = month - 1;
-    t.tm_mday  = day;
-    t.tm_hour  = hour;
-    t.tm_min   = minute;
-    t.tm_sec   = second;
-    t.tm_isdst = -1;
+    // Compute Julian Day Number — gives a timezone-independent absolute day count
+    int a = (14 - month) / 12;
+    int y = year + 4800 - a;
+    int m = month + 12 * a - 3;
+    long long jdn = (long long)day
+                  + (153 * m + 2) / 5
+                  + 365LL * y
+                  + y / 4
+                  - y / 100
+                  + y / 400
+                  - 32045LL;
 
-    return std::mktime(&t);
+    return static_cast<std::time_t>(jdn * 86400LL
+                                  + hour   * 3600LL
+                                  + minute * 60LL
+                                  + second);
 }
 
 AirplaneRecord& FleetDataManager::getOrCreateRecord(const std::string& id) {

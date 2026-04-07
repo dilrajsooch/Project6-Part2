@@ -60,20 +60,10 @@ void FleetDataManager::updateFuelReading(const std::string& id, const std::strin
         std::time_t prevTime = parseIso8601(record.previousDataPoint.timestamp);
         std::time_t currTime = parseIso8601(timestamp);
 
-        if (prevTime == static_cast<std::time_t>(-1) || currTime == static_cast<std::time_t>(-1)) {
-            Logger::log("[DEBUG] " + id + " timestamp parse failed: prev='" +
-                        record.previousDataPoint.timestamp + "' curr='" + timestamp + "'");
-        } else {
+        if (prevTime != static_cast<std::time_t>(-1) && currTime != static_cast<std::time_t>(-1)) {
             double elapsedSeconds = std::difftime(currTime, prevTime);
             double rate = FuelCalculator::calculateInstantRate(
                 record.previousDataPoint.fuelRemaining, fuelRemaining, elapsedSeconds);
-
-            Logger::log("[DEBUG] " + id +
-                        " elapsed=" + std::to_string(elapsedSeconds) +
-                        "s  prevFuel=" + std::to_string(record.previousDataPoint.fuelRemaining) +
-                        "  currFuel=" + std::to_string(fuelRemaining) +
-                        "  rate=" + std::to_string(rate) +
-                        "  runningAvg=" + std::to_string(record.currentFlightAvg));
 
             if (rate >= 0.0) {
                 record.currentFlightSampleCount++;

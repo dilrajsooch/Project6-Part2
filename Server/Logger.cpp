@@ -35,9 +35,10 @@ void Logger::log(const std::string& message) {
     // Write to stdout
     std::cout << logLine << std::endl;
 
-    // Append to log file
-    std::ofstream logFile("server_log.txt", std::ios::app);
+    // Append to log file (opened once for the lifetime of the process)
+    static std::ofstream logFile("server_log.txt", std::ios::app);
     if (logFile.is_open()) {
         logFile << logLine << "\n";
+        logFile.flush();
     }
 }

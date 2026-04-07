@@ -79,7 +79,6 @@ int main(int argc, char* argv[]) {
 
     // Start summary background thread
     std::thread summaryThread(summaryThreadFunc, &manager, &serverRunning);
-    summaryThread.detach();
 
     // Accept loop
     while (true) {
@@ -95,6 +94,11 @@ int main(int argc, char* argv[]) {
             break;
         }
 
+        // Set a 30-second receive timeout so idle clients don't block threads forever
+        DWORD recvTimeout = 30000;
+        setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO,
+                   reinterpret_cast<const char*>(&recvTimeout), sizeof(recvTimeout));
+
         int connCount = ++activeConnections;
         Logger::log("Client connected. Active: " + std::to_string(connCount));
 
@@ -109,6 +113,13 @@ int main(int argc, char* argv[]) {
 
     serverRunning.store(false);
     closesocket(listenSocket);
+
+    // Wait for all client threads to finish before destroying shared objects
+    while (activeConnections.load() > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    summaryThread.join();
     WSACleanup();
 
     Logger::log("Server shutting down.");

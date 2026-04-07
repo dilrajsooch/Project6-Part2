@@ -56,6 +56,12 @@ void ClientHandler::handleClient(SOCKET clientSocket, FleetDataManager* manager)
             break;
         }
 
+        // Guard against unbounded buffer growth (malformed or malicious input)
+        if (lineBuffer.size() > 1024) {
+            Logger::log("Line too long, dropping connection.");
+            break;
+        }
+
         if (ch == '\n') {
             // Process the line
             // Strip trailing '\r' if present (CRLF line endings)

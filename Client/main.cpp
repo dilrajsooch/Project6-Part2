@@ -4,6 +4,8 @@
 #include <random>
 #include <iomanip>
 #include <sstream>
+#include <thread>
+#include <chrono>
 #include "TelemetryFileReader.h"
 #include "PacketBuilder.h"
 #include "TcpTransmitter.h"
@@ -76,6 +78,10 @@ int main(int argc, char* argv[]) {
         }
 
         packetCount++;
+
+        // Pace transmission to match 1-second telemetry intervals.
+        // Remove this sleep for maximum throughput load testing.
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 
     // Clean up

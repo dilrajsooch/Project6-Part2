@@ -8,16 +8,18 @@ A real-time distributed client/server system that monitors aircraft fleet fuel c
 
 - Windows 10 or later
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) (Community or Enterprise) with the **Desktop development with C++** workload installed
-- [CMake 3.16+](https://cmake.org/download/) (included with Visual Studio or install separately)
 
 ---
 
 ## Project Structure
 
+The Server and Client are **two independent Visual Studio projects**. Each has its own `.sln` and can be opened, built, and deployed separately.
+
 ```
 Project6-Part2/
-  CMakeLists.txt
   Server/
+    Server.sln
+    Server.vcxproj
     main.cpp
     ClientHandler.h / .cpp
     FleetDataManager.h / .cpp
@@ -26,11 +28,15 @@ Project6-Part2/
     Logger.h / .cpp
     TelemetryDataPoint.h
   Client/
+    Client.sln
+    Client.vcxproj
     main.cpp
     TelemetryFileReader.h / .cpp
     PacketBuilder.h / .cpp
     TcpTransmitter.h / .cpp
     TelemetryDataPoint.h
+    LoadTest_Batch.bat
+    EnduranceTest_Batch.bat
     katl-kefd-B737-700.txt
     Telem_2023_3_12 14_56_40.txt
     Telem_2023_3_12 16_26_4.txt
@@ -39,37 +45,21 @@ Project6-Part2/
 
 ---
 
-## Building the Project
+## Building
 
-### Option A — Visual Studio (Recommended)
+### Server
 
-1. Open **Visual Studio 2022**
-2. Click **Open a local folder** and select the `Project6-Part2` folder
-3. Visual Studio will automatically detect the `CMakeLists.txt` and configure the project
-4. In the toolbar, set the build configuration to **Release**
-5. Go to **Build → Build All** (`Ctrl+Shift+B`)
-6. Executables will be output to a path like:
-   ```
-   out\build\x64-Release\Server\Server.exe
-   out\build\x64-Release\Client\Client.exe
-   ```
+1. Open `Server/Server.sln` in Visual Studio 2022
+2. Set configuration to **Release**
+3. Build the solution (`Ctrl+Shift+B`)
+4. Output: `Server/Release/Server.exe`
 
-### Option B — Command Line (Developer Command Prompt)
+### Client
 
-Open **Developer Command Prompt for VS 2022** and run:
-
-```bat
-cd Project6-Part2
-mkdir build && cd build
-cmake .. -G "Visual Studio 17 2022" -A x64
-cmake --build . --config Release
-```
-
-Executables will be in:
-```
-build\Server\Release\Server.exe
-build\Client\Release\Client.exe
-```
+1. Open `Client/Client.sln` in Visual Studio 2022
+2. Set configuration to **Release**
+3. Build the solution (`Ctrl+Shift+B`)
+4. Output: `Client/Release/Client.exe`
 
 ---
 
@@ -111,7 +101,7 @@ Client.exe 127.0.0.1 5000 katl-kefd-B737-700.txt
 Client.exe 192.168.1.50 5000 "Telem_2023_3_12 14_56_40.txt"
 ```
 
-> **Note:** Use the actual IP address of the server PC when running across multiple machines. Never use `127.0.0.1` across a network.
+> **Note:** The IP address is a command line argument — never hardcode it. Use the actual IP address of the server PC when running across multiple machines.
 
 #### Available Telemetry Files
 
@@ -124,24 +114,34 @@ Client.exe 192.168.1.50 5000 "Telem_2023_3_12 14_56_40.txt"
 
 ---
 
-## Running Multiple Clients (Load Testing)
+## Performance Testing
 
-Use the provided batch script to launch multiple clients at once. Create a file called `LoadTest_Batch.bat`:
+Copy `Client.exe`, the telemetry `.txt` files, and the batch scripts to each client PC. Before running, edit the `SERVER_IP` variable at the top of each `.bat` file to match the server PC's IP address.
+
+### Load Testing
+
+Use `LoadTest_Batch.bat` to spawn multiple clients at once. Edit the variables at the top of the file:
 
 ```bat
-@echo off
-SET /A "index = 1"
+SET SERVER_IP=192.168.1.100
+SET SERVER_PORT=5000
+SET DATA_FILE=katl-kefd-B737-700.txt
 SET /A "count = 25"
-:while
-if %index% leq %count% (
-    START /MIN Client.exe 192.168.1.50 5000 katl-kefd-B737-700.txt
-    SET /A index = %index% + 1
-    @echo %index%
-    goto :while
-)
 ```
 
 Change `count` to control how many clients launch. Run the script multiple times to increase load.
+
+### Endurance/Spike Testing
+
+Use `EnduranceTest_Batch.bat` to continuously spawn waves of clients. It will keep spawning `count` clients every `timeout` seconds until manually terminated. Edit the variables at the top:
+
+```bat
+SET SERVER_IP=192.168.1.100
+SET SERVER_PORT=5000
+SET DATA_FILE=katl-kefd-B737-700.txt
+SET /A "count = 100"
+timeout 250
+```
 
 ---
 
@@ -164,4 +164,4 @@ On the server PC, open Command Prompt and run:
 ipconfig
 ```
 
-Look for the **IPv4 Address** under your active network adapter (e.g., `192.168.1.50`). Use this address in all client commands.
+Look for the **IPv4 Address** under your active network adapter (e.g., `192.168.1.50`). Use this address in all client commands and batch scripts.

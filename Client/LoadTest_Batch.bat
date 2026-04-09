@@ -3,8 +3,11 @@ SET SERVER_IP=192.168.1.100
 SET SERVER_PORT=5000
 SET DATA_FILE=katl-kefd-B737-700.txt
 
-SET /A "index = 1"
 SET /A "count = 25"
+
+:restart
+SET /A "index = 1"
+@echo Spawning wave of %count% clients...
 
 :while
 if %index% leq %count% (
@@ -13,3 +16,6 @@ if %index% leq %count% (
 	@echo %index%
 	goto :while
 )
+
+@echo Wave complete. Restarting...
+goto :restart
